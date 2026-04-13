@@ -7,11 +7,11 @@
 #  ██████╔╝   ██║       ██║  ██║╚██████╔╝███████║   ██║   
 #  ╚═════╝    ╚═╝       ╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝   
 # ═══════════════════════════════════════════════════════════════════════════════
-#  [:::: DARK HOST v2.0 - ULTIMATE BOT HOSTING SYSTEM ::::]
-#  [:::: FIXED FOR RENDER.COM ::::]
+#  [:::: DARK HOST v2.0 - RENDER FIXED ::::]
 # ═══════════════════════════════════════════════════════════════════════════════
 
 import os
+import sys
 import time
 import json
 import shutil
@@ -20,6 +20,14 @@ import subprocess
 import random
 import string
 from datetime import datetime, timedelta
+
+# Fix for Python 3.14+ - manual imghdr replacement
+import imghdr
+if not hasattr(imghdr, 'what'):
+    # Create a simple fallback for imghdr
+    def what_manual(file, h=None):
+        return 'jpeg'  # Default fallback
+    imghdr.what = what_manual
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
