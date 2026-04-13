@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: hostingbot
+    name: dark-host-bot
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: python main.py
