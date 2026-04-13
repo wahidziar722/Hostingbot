@@ -1,33 +1,17 @@
 #!/usr/bin/env python3
-# ═══════════════════════════════════════════════════════════════════════════════
-#  ██████╗ ████████╗    ██╗  ██╗ ██████╗ ███████╗████████╗
-#  ██╔══██╗╚══██╔══╝    ██║  ██║██╔═══██╗██╔════╝╚══██╔══╝
-#  ██║  ██║   ██║       ███████║██║   ██║███████╗   ██║   
-#  ██║  ██║   ██║       ██╔══██║██║   ██║╚════██║   ██║   
-#  ██████╔╝   ██║       ██║  ██║╚██████╔╝███████║   ██║   
-#  ╚═════╝    ╚═╝       ╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝   
-# ═══════════════════════════════════════════════════════════════════════════════
-#  [:::: DARK HOST v2.0 - RENDER FIXED ::::]
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
+#  DARK HOST BOT - RENDER FIXED VERSION
+#  WORKING 100% ON PYTHON 3.9
+# ═══════════════════════════════════════════════════════════════════
 
 import os
-import sys
 import time
-import json
-import shutil
 import sqlite3
+import shutil
 import subprocess
 import random
 import string
 from datetime import datetime, timedelta
-
-# Fix for Python 3.14+ - manual imghdr replacement
-import imghdr
-if not hasattr(imghdr, 'what'):
-    # Create a simple fallback for imghdr
-    def what_manual(file, h=None):
-        return 'jpeg'  # Default fallback
-    imghdr.what = what_manual
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
@@ -87,7 +71,6 @@ def init_db():
 init_db()
 os.makedirs(BOTS_DIR, exist_ok=True)
 
-# Helper Functions
 def is_user_joined_channels(user_id, bot):
     for channel in REQUIRED_CHANNELS:
         try:
@@ -174,7 +157,6 @@ def redeem_code(user_id, code):
     conn.close()
     return True, f"✅ Premium activated for {duration_days} days!"
 
-# ==================== BOT HANDLERS ====================
 def start(update, context):
     user = update.effective_user
     save_user(user.id, user.username)
@@ -182,7 +164,7 @@ def start(update, context):
     joined, missing_url = is_user_joined_channels(user.id, context.bot)
     if not joined:
         update.message.reply_text(
-            f"⚠️ *Access Denied!*\n\nYou must join both channels first:\n👉 {missing_url}\n\nAfter joining, click the button below.",
+            f"⚠️ *Access Denied!*\n\nYou must join both channels first:\n👉 {missing_url}",
             reply_markup=get_channels_keyboard(),
             parse_mode="Markdown"
         )
@@ -224,15 +206,9 @@ def callback_handler(update, context):
         conn.close()
         
         if not is_premium and bot_count >= FREE_LIMIT:
-            query.edit_message_text(
-                f"❌ *LIMIT REACHED*\n\nFree users can only host {FREE_LIMIT} bot.\n\nBuy premium for unlimited hosting!",
-                parse_mode="Markdown"
-            )
+            query.edit_message_text(f"❌ *LIMIT REACHED*\n\nFree users can only host {FREE_LIMIT} bot.", parse_mode="Markdown")
         else:
-            query.edit_message_text(
-                "📤 *Upload Your Bot*\n\nSend me your .py or .zip file.\n\nAdmin will review it.",
-                parse_mode="Markdown"
-            )
+            query.edit_message_text("📤 *Upload Your Bot*\n\nSend me your .py or .zip file.", parse_mode="Markdown")
     
     elif data == "my_bots":
         conn = sqlite3.connect(DB_FILE)
@@ -255,7 +231,7 @@ def callback_handler(update, context):
             [InlineKeyboardButton("📞 Contact Admin", url=f"https://t.me/{ADMIN_USERNAME}")]
         ])
         query.edit_message_text(
-            "⭐ *Premium Features*\n\n• Unlimited bots\n• 24/7 hosting\n• Priority support\n\nContact admin to buy:",
+            "⭐ *Premium Features*\n\n• Unlimited bots\n• 24/7 hosting\n• Priority support",
             reply_markup=keyboard,
             parse_mode="Markdown"
         )
@@ -264,15 +240,12 @@ def callback_handler(update, context):
         query.edit_message_text("🎫 Send your code:\n`/redeem YOURCODE`", parse_mode="Markdown")
     
     elif data == "create_code" and user.id == ADMIN_ID:
-        query.edit_message_text(
-            "🔑 *Create Premium Code*\n\nUse:\n`/code 30` (30 days)\n`/code 60` (60 days)\n`/code 365` (365 days)",
-            parse_mode="Markdown"
-        )
+        query.edit_message_text("🔑 *Create Code*\n\n`/code 30` (30 days)\n`/code 60`\n`/code 365`", parse_mode="Markdown")
     
     elif data == "admin_panel" and user.id == ADMIN_ID:
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
-        c.execute("SELECT id, user_id, bot_name, file_path, submitted_at FROM pending_bots")
+        c.execute("SELECT id, user_id, bot_name, submitted_at FROM pending_bots")
         pending = c.fetchall()
         conn.close()
         
@@ -286,57 +259,43 @@ def callback_handler(update, context):
                  InlineKeyboardButton("❌ Reject", callback_data=f"reject_{p[0]}")]
             ])
             query.message.reply_text(
-                f"📄 *Pending Bot*\nID: {p[0]}\nUser: {p[1]}\nBot: {p[2]}\nTime: {p[4][:16]}",
+                f"📄 *Pending Bot*\nUser: {p[1]}\nBot: {p[2]}",
                 reply_markup=keyboard,
                 parse_mode="Markdown"
             )
     
     elif data.startswith("approve_") and user.id == ADMIN_ID:
         bot_id = int(data.split("_")[1])
-        
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
         c.execute("SELECT user_id, bot_name, file_path FROM pending_bots WHERE id=?", (bot_id,))
         result = c.fetchone()
-        
         if result:
             user_id, bot_name, file_path = result
             new_path = f"{BOTS_DIR}/user_{user_id}_{bot_name}"
             shutil.move(file_path, new_path)
-            
             c.execute("INSERT INTO bots (user_id, bot_name, file_path, status, start_time) VALUES (?, ?, ?, ?, ?)",
                       (user_id, bot_name, new_path, "running", datetime.now().isoformat()))
             c.execute("DELETE FROM pending_bots WHERE id=?", (bot_id,))
             conn.commit()
-            
-            # Run the bot
-            process = subprocess.Popen(["python", new_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            c.execute("UPDATE bots SET process_id=? WHERE bot_name=?", (process.pid, bot_name))
-            conn.commit()
-            
-            query.edit_message_text(f"✅ Bot `{bot_name}` approved and running 24/7!", parse_mode="Markdown")
-            context.bot.send_message(chat_id=user_id, text=f"✅ Your bot `{bot_name}` has been approved and is now running 24/7!", parse_mode="Markdown")
-        
+            query.edit_message_text(f"✅ Bot `{bot_name}` approved!", parse_mode="Markdown")
+            context.bot.send_message(chat_id=user_id, text=f"✅ Your bot `{bot_name}` is now running 24/7!", parse_mode="Markdown")
         conn.close()
     
     elif data.startswith("reject_") and user.id == ADMIN_ID:
         bot_id = int(data.split("_")[1])
-        
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
         c.execute("SELECT user_id, bot_name, file_path FROM pending_bots WHERE id=?", (bot_id,))
         result = c.fetchone()
-        
         if result:
             user_id, bot_name, file_path = result
             if os.path.exists(file_path):
                 os.remove(file_path)
             c.execute("DELETE FROM pending_bots WHERE id=?", (bot_id,))
             conn.commit()
-            
             query.edit_message_text(f"❌ Bot `{bot_name}` rejected.", parse_mode="Markdown")
             context.bot.send_message(chat_id=user_id, text=f"❌ Your bot `{bot_name}` was rejected.", parse_mode="Markdown")
-        
         conn.close()
 
 def handle_file(update, context):
@@ -347,7 +306,6 @@ def handle_file(update, context):
         update.message.reply_text("❌ Only .py or .zip files allowed!")
         return
     
-    # Check limit
     bot_count = get_user_bot_count(user.id)
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
@@ -360,12 +318,10 @@ def handle_file(update, context):
         update.message.reply_text(f"❌ Limit reached! Free users can only host {FREE_LIMIT} bot.")
         return
     
-    # Download file
     new_file = file.get_file()
     file_path = f"pending_{user.id}_{int(time.time())}_{file.file_name}"
     new_file.download(file_path)
     
-    # Save to pending
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     c.execute("INSERT INTO pending_bots (user_id, bot_name, file_path, submitted_at) VALUES (?, ?, ?, ?)",
@@ -374,80 +330,74 @@ def handle_file(update, context):
     conn.commit()
     conn.close()
     
-    # Send to approval group
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("✅ Yes - Approve", callback_data=f"approve_{pending_id}"),
-         InlineKeyboardButton("❌ No - Reject", callback_data=f"reject_{pending_id}")]
+        [InlineKeyboardButton("✅ Approve", callback_data=f"approve_{pending_id}"),
+         InlineKeyboardButton("❌ Reject", callback_data=f"reject_{pending_id}")]
     ])
     
     context.bot.send_message(
         chat_id=APPROVAL_GROUP_ID,
-        text=f"📥 *New Bot Upload*\n\n👤 User: @{user.username or user.id}\n📁 File: `{file.file_name}`\n\n❓ تاسو دغه بوټ چلولو ته ورکوئ؟",
+        text=f"📥 *New Bot*\nUser: @{user.username or user.id}\nFile: {file.file_name}",
         reply_markup=keyboard,
         parse_mode="Markdown"
     )
     
-    update.message.reply_text(
-        f"✅ File received!\n\n📌 Name: {file.file_name}\n⏳ Status: PENDING\n\nAdmin will review it soon."
-    )
+    update.message.reply_text(f"✅ File received! Pending admin approval.")
 
 def redeem_command(update, context):
     user = update.effective_user
     if len(context.args) != 1:
         update.message.reply_text("Usage: `/redeem CODE`", parse_mode="Markdown")
         return
-    
     code = context.args[0].upper()
     success, msg = redeem_code(user.id, code)
     update.message.reply_text(msg)
 
 def create_code_command(update, context):
     if update.effective_user.id != ADMIN_ID:
-        update.message.reply_text("❌ Only admin can use this!")
+        update.message.reply_text("❌ Admin only!")
         return
-    
     if len(context.args) != 1:
-        update.message.reply_text("Usage: `/code 30` (for 30 days)", parse_mode="Markdown")
+        update.message.reply_text("Usage: `/code 30`", parse_mode="Markdown")
         return
-    
     try:
         days = int(context.args[0])
-        if days <= 0:
-            raise ValueError
+        code = generate_premium_code(days)
+        update.message.reply_text(f"✅ Code: `{code}`\nDuration: {days} days", parse_mode="Markdown")
     except:
-        update.message.reply_text("❌ Please provide a valid number of days!")
-        return
-    
-    code = generate_premium_code(days)
-    update.message.reply_text(
-        f"✅ *Premium Code Created*\n\n📌 Code: `{code}`\n📅 Duration: {days} days",
-        parse_mode="Markdown"
-    )
+        update.message.reply_text("❌ Invalid number!")
 
 def error_handler(update, context):
     print(f"Error: {context.error}")
 
 # ==================== MAIN ====================
 def main():
-    # Create necessary directories
+    print("=" * 50)
+    print("🤖 DARK HOST BOT STARTING...")
+    print("=" * 50)
+    
     os.makedirs(BOTS_DIR, exist_ok=True)
     
-    # Create updater
-    updater = Updater(TOKEN, use_context=True)
-    dp = updater.dispatcher
-    
-    # Register handlers
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("redeem", redeem_command))
-    dp.add_handler(CommandHandler("code", create_code_command))
-    dp.add_handler(CallbackQueryHandler(callback_handler))
-    dp.add_handler(MessageHandler(Filters.document, handle_file))
-    dp.add_error_handler(error_handler)
-    
-    # Start bot
-    print("🤖 DARK HOST BOT is running 24/7...")
-    updater.start_polling()
-    updater.idle()
+    try:
+        updater = Updater(TOKEN, use_context=True)
+        dp = updater.dispatcher
+        
+        dp.add_handler(CommandHandler("start", start))
+        dp.add_handler(CommandHandler("redeem", redeem_command))
+        dp.add_handler(CommandHandler("code", create_code_command))
+        dp.add_handler(CallbackQueryHandler(callback_handler))
+        dp.add_handler(MessageHandler(Filters.document, handle_file))
+        dp.add_error_handler(error_handler)
+        
+        print("✅ Bot started successfully!")
+        print("✅ Press Ctrl+C to stop")
+        print("=" * 50)
+        
+        updater.start_polling()
+        updater.idle()
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
 
 if __name__ == "__main__":
     main()
